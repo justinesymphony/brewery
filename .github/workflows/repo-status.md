@@ -43,6 +43,7 @@ engine:
     type: github-oidc
     provider: gcp
     workload-identity-provider: projects/283047417284/locations/global/workloadIdentityPools/github-actions/providers/github
+    audience: https://iam.googleapis.com/projects/123456789012/locations/global/workloadIdentityPools/github-actions/providers/github
     service-account: project-service-account@sym-dev-mr-ai-qa-01.iam.gserviceaccount.com
     project: sym-dev-mr-ai-qa-01
     location: europe-west1        # default is us-central1

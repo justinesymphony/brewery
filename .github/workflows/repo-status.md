@@ -37,7 +37,7 @@ safe-outputs:
     close-older-issues: true
 engine:
   id: gemini
-  model: gemini-2.5-flash          # free tier on AI Studio; needs only GEMINI_API_KEY
+  model: gemini-3.8-flash          # free tier on AI Studio; needs only GEMINI_API_KEY
 
 source: githubnext/agentics/workflows/repo-status.md@139fa09ef17cde4135e696ff8e7af09bc5ddfa6e
 source-sha: "139fa09ef17cde4135e696ff8e7af09bc5ddfa6e"

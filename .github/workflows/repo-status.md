@@ -13,7 +13,6 @@ permissions:
   contents: read
   issues: read
   pull-requests: read
-  id-token: write 
 
 
 network: defaults
@@ -29,7 +28,7 @@ tools:
 
 safe-outputs:
   threat-detection:
-    engine: gemini                # otherwise detection falls back to Copilot
+    engine: gemini                # detection uses the same free key (else it falls back to Copilot)
   mentions: false
   allowed-github-references: []
   create-issue:
@@ -38,15 +37,7 @@ safe-outputs:
     close-older-issues: true
 engine:
   id: gemini
-  model: gemini-3-flash-preview   # exact Vertex model id; gh-aw passes it through unchanged
-  auth:
-    type: github-oidc
-    provider: gcp
-    workload-identity-provider: projects/283047417284/locations/global/workloadIdentityPools/github-actions/providers/github
-    audience: https://iam.googleapis.com/projects/283047417284/locations/global/workloadIdentityPools/github-actions/providers/github
-    service-account: project-service-account@sym-dev-mr-ai-qa-01.iam.gserviceaccount.com
-    project: sym-dev-mr-ai-qa-01
-    location: europe-west1        # default is us-central1
+  model: gemini-2.5-flash          # free tier on AI Studio; needs only GEMINI_API_KEY
 
 source: githubnext/agentics/workflows/repo-status.md@139fa09ef17cde4135e696ff8e7af09bc5ddfa6e
 source-sha: "139fa09ef17cde4135e696ff8e7af09bc5ddfa6e"

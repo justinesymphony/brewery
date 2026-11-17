@@ -21,7 +21,7 @@ permissions:
   pull-requests: read
 engine:
   id: gemini
-  model: gemini-3-flash-preview
+  model: gemini-3.8-flash
 concurrency:
   group: keep-prs-current
   cancel-in-progress: true

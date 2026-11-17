@@ -29,7 +29,11 @@ network: defaults
 tools:
   bash: ["cat candidates.json", "jq *"]
 safe-outputs:
-  github-token: ${{ secrets.AUTO_UPDATE_TOKEN }}
+  # Falls back to GITHUB_TOKEN so the workflow is testable before the bot PAT
+  # exists. The fallback can update a same-repository branch, but it cannot
+  # write to a fork head branch, and a comment it posts does not trigger other
+  # workflows -- so CI will not re-run until AUTO_UPDATE_TOKEN is set.
+  github-token: ${{ secrets.AUTO_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
   threat-detection:
     engine: gemini
   update-pull-request:

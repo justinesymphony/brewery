@@ -11,7 +11,11 @@ on:
     name: update
     events: [pull_request_comment]
   workflow_dispatch:
-  cooldown: 20m
+  # No cooldown on purpose. gh-aw applies cooldown in pre_activation, before it
+  # looks at the trigger, so it also silences /update and workflow_dispatch --
+  # an engineer typing /update would get nothing back for 20 minutes. The
+  # concurrency group below coalesces a burst of merges more precisely: the
+  # newest run survives and the superseded ones are cancelled.
 permissions:
   contents: read
   pull-requests: read

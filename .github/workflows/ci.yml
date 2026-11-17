@@ -1,0 +1,45 @@
+name: CI
+# Deliberately mirrors SFE-Lite's contract: build when a pull request opens,
+# and re-build only when somebody comments /run. Pushes to a PR branch do NOT
+# rebuild on their own, so the agent has to ask for CI the same way it will in
+# SFE-Lite.
+on:
+  pull_request:
+    types: [opened, reopened]
+  issue_comment:
+    types: [created]
+
+jobs:
+  build:
+    if: >-
+      github.event_name == 'pull_request' ||
+      (github.event.issue.pull_request != null &&
+       startsWith(github.event.comment.body, '/run'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # On issue_comment the checkout above lands on the default branch, so the
+      # pull request head has to be fetched explicitly.
+      - name: Check out the pull request head
+        if: github.event_name == 'issue_comment'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh pr checkout ${{ github.event.issue.number }}
+
+      - name: Report what is being built
+        run: |
+          echo "event: ${{ github.event_name }}"
+          echo "ref:   $(git rev-parse --short HEAD)"
+          git log --oneline -3
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '8'
+          cache: maven
+
+      - run: chmod +x mvnw && ./mvnw -B -ntp verify

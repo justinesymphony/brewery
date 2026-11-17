@@ -29,9 +29,17 @@ timeout-minutes: 15
 max-turns: 30
 max-ai-credits: 300
 max-daily-ai-credits: 3000
-network: defaults
+network:
+  # play.googleapis.com is Gemini CLI telemetry. It is not needed for the task,
+  # but leaving it blocked fills the firewall log with denials and muddies the
+  # diagnosis of real failures.
+  allowed: [defaults, play.googleapis.com]
 tools:
-  bash: ["cat candidates.json", "jq *"]
+  # "safeoutputs *" is required: gh-aw exposes the safe-output tools as a CLI on
+  # PATH and the agent reaches for that form first. Without it every write is
+  # refused with "Tool execution denied by policy" after the agent has already
+  # reasoned correctly -- an expensive way to do nothing.
+  bash: ["cat candidates.json", "jq *", "safeoutputs *"]
 safe-outputs:
   # Falls back to GITHUB_TOKEN so the workflow is testable before the bot PAT
   # exists. The fallback can update a same-repository branch, but it cannot
@@ -169,3 +177,21 @@ the next run.
 
 Finish by stating, in the run summary, how many pull requests you updated, how
 many you skipped, and the reason for each skip.
+
+## Emitting the outputs
+
+Issue each safe output as its **own** command. Do not chain them with `&&` or
+`;` — compound commands are refused by the sandbox policy even when the
+individual command is allowed, and a refusal here wastes the whole run.
+
+Correct, one call per command:
+
+```
+safeoutputs update_pull_request '{"pull_request_number":7,"update_branch":true}'
+safeoutputs add_comment '{"item_number":7,"body":"/run"}'
+```
+
+Post the `/run` comment **separately from** the explanatory comment, and send
+`/run` as a comment whose body is exactly those four characters, so CI matches
+it. If a safe-output call is refused twice, stop and call `report_incomplete`
+with the refusal text rather than trying further variants.

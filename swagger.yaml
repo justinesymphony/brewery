@@ -5,7 +5,7 @@ servers:
     url: https://virtserver.swaggerhub.com/justinesymphony/brewery/1.0.0
 info:
   description: This is a simple API
-  version: "1.0.0"
+  version: "1.1.0"
   title: Brewery API
   contact:
     email: thibault.pensec@symphony.com

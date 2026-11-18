@@ -56,10 +56,19 @@ safe-outputs:
   # check still runs and still fails the workflow; it just stops announcing
   # itself in an issue, so an upgrade demand will only be visible in the run log.
   #
-  # It does NOT cover report-missing-tool or report-incomplete, which file their
-  # own issues from their own steps. Add `create-issue: false` under each to
-  # silence those too.
+  # report-failure-as-issue does not reach the two outputs below: each files its
+  # own issue from its own step, so each is switched off on its own.
   report-failure-as-issue: false
+  # The agent still reports a wall it cannot get past -- a refused safe output
+  # (report_incomplete) or a capability the policy does not grant
+  # (report_missing_tool). Those reports now land in the run summary and the
+  # safe-outputs artifact instead of the issue tracker, so check `gh aw audit`
+  # rather than waiting to be told. Set create-issue back to true for either one
+  # to have it raise a ticket again.
+  report-incomplete:
+    create-issue: false
+  report-missing-tool:
+    create-issue: false
   threat-detection:
     engine: gemini
   update-pull-request:

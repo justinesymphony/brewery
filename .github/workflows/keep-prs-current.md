@@ -71,6 +71,11 @@ safe-outputs:
     create-issue: false
   threat-detection:
     engine: gemini
+    # Sixth and last issue-filing path. The detection job logs its runs as an
+    # issue of its own, which is how "[aw] Detection Runs" kept reappearing even
+    # with every other switch off. Detection itself still runs and still blocks
+    # the workflow on a finding; only the log issue is suppressed.
+    report-as-issue: false
   update-pull-request:
     update-branch: true
     title: false

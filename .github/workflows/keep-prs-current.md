@@ -11,13 +11,17 @@ on:
     name: update
     events: [pull_request_comment]
   workflow_dispatch:
-  cooldown: 20m
+  # No cooldown on purpose. gh-aw applies cooldown in pre_activation, before it
+  # looks at the trigger, so it also silences /update and workflow_dispatch --
+  # an engineer typing /update would get nothing back for 20 minutes. The
+  # concurrency group below coalesces a burst of merges more precisely: the
+  # newest run survives and the superseded ones are cancelled.
 permissions:
   contents: read
   pull-requests: read
 engine:
   id: gemini
-  model: gemini-3-flash-preview
+  model: gemini-3.8-flash
 concurrency:
   group: keep-prs-current
   cancel-in-progress: true
@@ -25,13 +29,53 @@ timeout-minutes: 15
 max-turns: 30
 max-ai-credits: 300
 max-daily-ai-credits: 3000
-network: defaults
+network:
+  # play.googleapis.com is Gemini CLI telemetry. It is not needed for the task,
+  # but leaving it blocked fills the firewall log with denials and muddies the
+  # diagnosis of real failures.
+  allowed: [defaults, play.googleapis.com]
 tools:
-  bash: ["cat candidates.json", "jq *"]
+  # "safeoutputs *" is required: gh-aw exposes the safe-output tools as a CLI on
+  # PATH and the agent reaches for that form first. Without it every write is
+  # refused with "Tool execution denied by policy" after the agent has already
+  # reasoned correctly -- an expensive way to do nothing.
+  bash: ["cat candidates.json", "jq *", "safeoutputs *"]
 safe-outputs:
-  github-token: ${{ secrets.AUTO_UPDATE_TOKEN }}
+  # Falls back to GITHUB_TOKEN so the workflow is testable before the bot PAT
+  # exists. The fallback can update a same-repository branch, but it cannot
+  # write to a fork head branch, and a comment it posts does not trigger other
+  # workflows -- so CI will not re-run until AUTO_UPDATE_TOKEN is set.
+  github-token: ${{ secrets.AUTO_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
+  # No issue when a run fails. gh-aw files one per failed run by default, which
+  # during a pilot fills the tracker with noise nobody triages -- the run log and
+  # `gh aw audit` are where a failure actually gets diagnosed. To bring back only
+  # the failures worth waking up for, replace false with a list of categories,
+  # e.g. [agent_failure, max_ai_credits_exceeded].
+  #
+  # This also suppresses the blocked-compiler-version notification issue. That
+  # check still runs and still fails the workflow; it just stops announcing
+  # itself in an issue, so an upgrade demand will only be visible in the run log.
+  #
+  # report-failure-as-issue does not reach the two outputs below: each files its
+  # own issue from its own step, so each is switched off on its own.
+  report-failure-as-issue: false
+  # The agent still reports a wall it cannot get past -- a refused safe output
+  # (report_incomplete) or a capability the policy does not grant
+  # (report_missing_tool). Those reports now land in the run summary and the
+  # safe-outputs artifact instead of the issue tracker, so check `gh aw audit`
+  # rather than waiting to be told. Set create-issue back to true for either one
+  # to have it raise a ticket again.
+  report-incomplete:
+    create-issue: false
+  report-missing-tool:
+    create-issue: false
   threat-detection:
     engine: gemini
+    # Sixth and last issue-filing path. The detection job logs its runs as an
+    # issue of its own, which is how "[aw] Detection Runs" kept reappearing even
+    # with every other switch off. Detection itself still runs and still blocks
+    # the workflow on a finding; only the log issue is suppressed.
+    report-as-issue: false
   update-pull-request:
     update-branch: true
     title: false
@@ -161,3 +205,21 @@ the next run.
 
 Finish by stating, in the run summary, how many pull requests you updated, how
 many you skipped, and the reason for each skip.
+
+## Emitting the outputs
+
+Issue each safe output as its **own** command. Do not chain them with `&&` or
+`;` — compound commands are refused by the sandbox policy even when the
+individual command is allowed, and a refusal here wastes the whole run.
+
+Correct, one call per command:
+
+```
+safeoutputs update_pull_request '{"pull_request_number":7,"update_branch":true}'
+safeoutputs add_comment '{"item_number":7,"body":"/run"}'
+```
+
+Post the `/run` comment **separately from** the explanatory comment, and send
+`/run` as a comment whose body is exactly those four characters, so CI matches
+it. If a safe-output call is refused twice, stop and call `report_incomplete`
+with the refusal text rather than trying further variants.

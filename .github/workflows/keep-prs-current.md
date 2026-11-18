@@ -46,6 +46,20 @@ safe-outputs:
   # write to a fork head branch, and a comment it posts does not trigger other
   # workflows -- so CI will not re-run until AUTO_UPDATE_TOKEN is set.
   github-token: ${{ secrets.AUTO_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
+  # No issue when a run fails. gh-aw files one per failed run by default, which
+  # during a pilot fills the tracker with noise nobody triages -- the run log and
+  # `gh aw audit` are where a failure actually gets diagnosed. To bring back only
+  # the failures worth waking up for, replace false with a list of categories,
+  # e.g. [agent_failure, max_ai_credits_exceeded].
+  #
+  # This also suppresses the blocked-compiler-version notification issue. That
+  # check still runs and still fails the workflow; it just stops announcing
+  # itself in an issue, so an upgrade demand will only be visible in the run log.
+  #
+  # It does NOT cover report-missing-tool or report-incomplete, which file their
+  # own issues from their own steps. Add `create-issue: false` under each to
+  # silence those too.
+  report-failure-as-issue: false
   threat-detection:
     engine: gemini
   update-pull-request:

@@ -4,9 +4,9 @@ strict: true
 on:
   push:
     branches: [master]
-  schedule:
-    - cron: "0 3 * * 1-5"
-      timezone: "Europe/Paris"
+  #schedule:
+  #  - cron: "0 3 * * 1-5"
+  #    timezone: "Europe/Paris"
   slash_command:
     name: update
     events: [pull_request_comment]

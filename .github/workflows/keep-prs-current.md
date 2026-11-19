@@ -26,7 +26,7 @@ concurrency:
   group: keep-prs-current
   cancel-in-progress: true
 timeout-minutes: 15
-max-turns: 30
+max-turns: 50
 max-ai-credits: 300
 max-daily-ai-credits: 3000
 network:

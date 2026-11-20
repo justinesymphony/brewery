@@ -4,9 +4,9 @@ strict: true
 on:
   push:
     branches: [master]
-  schedule:
-    - cron: "0 3 * * 1-5"
-      timezone: "Europe/Paris"
+  #schedule:
+  #  - cron: "0 3 * * 1-5"
+  #    timezone: "Europe/Paris"
   slash_command:
     name: update
     events: [pull_request_comment]
@@ -26,7 +26,7 @@ concurrency:
   group: keep-prs-current
   cancel-in-progress: true
 timeout-minutes: 15
-max-turns: 30
+max-turns: 50
 max-ai-credits: 300
 max-daily-ai-credits: 3000
 network:
